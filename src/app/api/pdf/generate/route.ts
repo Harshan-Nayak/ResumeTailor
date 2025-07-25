@@ -281,49 +281,55 @@ export async function POST(request: NextRequest) {
     
     let pdfBuffer;
     try {
-      // For @react-pdf/renderer v3.4.4, we need to use different approach
-      const pdfInstance = pdf(MyDocument);
-      console.log('PDF Generate API: PDF instance created, type:', typeof pdfInstance);
-      console.log('PDF Generate API: PDF instance constructor:', pdfInstance?.constructor?.name);
+      // Simple approach - directly await the pdf function
+      console.log('PDF Generate API: Creating PDF using direct approach...');
+      pdfBuffer = await pdf(MyDocument).toBuffer();
       
-      // Try different methods based on version
-      if (typeof pdfInstance.toBuffer === 'function') {
-        console.log('PDF Generate API: Using toBuffer() method...');
-        pdfBuffer = await pdfInstance.toBuffer();
-      } else if (typeof pdfInstance.toBlob === 'function') {
-        console.log('PDF Generate API: Using toBlob() method...');
-        const blob = await pdfInstance.toBlob();
-        pdfBuffer = Buffer.from(await blob.arrayBuffer());
-      } else if (typeof pdfInstance.toString === 'function') {
-        console.log('PDF Generate API: Using toString() method...');
-        const pdfString = await pdfInstance.toString();
-        pdfBuffer = Buffer.from(pdfString, 'binary');
-      } else {
-        console.log('PDF Generate API: Trying stream approach...');
-        // Try streaming approach for older versions
-        const chunks: Buffer[] = [];
-        const stream = await new Promise((resolve, reject) => {
-          const readable = pdfInstance.pipe ? pdfInstance : pdfInstance.toStream ? pdfInstance.toStream() : null;
-          if (!readable) {
-            reject(new Error('No readable stream available'));
-            return;
-          }
-          
-          readable.on('data', (chunk: any) => chunks.push(Buffer.from(chunk)));
-          readable.on('end', () => resolve(Buffer.concat(chunks)));
-          readable.on('error', reject);
-        });
-        pdfBuffer = stream as Buffer;
-      }
-      
-      console.log('PDF Generate API: PDF buffer created, size:', pdfBuffer?.length);
-      console.log('PDF Generate API: PDF buffer type:', typeof pdfBuffer);
-      console.log('PDF Generate API: PDF buffer constructor:', pdfBuffer?.constructor?.name);
+      console.log('PDF Generate API: Direct buffer result, size:', pdfBuffer?.length);
+      console.log('PDF Generate API: Direct buffer type:', typeof pdfBuffer);
+      console.log('PDF Generate API: Direct buffer constructor:', pdfBuffer?.constructor?.name);
       console.log('PDF Generate API: Is Buffer?', Buffer.isBuffer(pdfBuffer));
       
-    } catch (bufferError) {
-      console.error('PDF Generate API: Error generating buffer:', bufferError);
-      throw new Error(`Failed to generate PDF buffer: ${bufferError instanceof Error ? bufferError.message : 'Unknown buffer error'}`);
+    } catch (directError) {
+      console.error('PDF Generate API: Direct approach failed:', directError);
+      
+      try {
+        // Fallback: Try blob approach
+        console.log('PDF Generate API: Trying blob approach...');
+        const pdfBlob = await pdf(MyDocument).toBlob();
+        console.log('PDF Generate API: Blob created, size:', pdfBlob.size);
+        
+        const arrayBuffer = await pdfBlob.arrayBuffer();
+        pdfBuffer = Buffer.from(arrayBuffer);
+        
+        console.log('PDF Generate API: Buffer from blob, size:', pdfBuffer?.length);
+        
+      } catch (blobError) {
+        console.error('PDF Generate API: Blob approach failed:', blobError);
+        
+        try {
+          // Last resort: Try instance approach with manual awaiting
+          console.log('PDF Generate API: Trying instance approach...');
+          const instance = pdf(MyDocument);
+          console.log('PDF Generate API: Instance created:', typeof instance);
+          
+          // Check what methods are available
+          console.log('PDF Generate API: Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(instance)));
+          
+          if (instance && typeof instance.toBuffer === 'function') {
+            pdfBuffer = await instance.toBuffer();
+          } else if (instance && typeof instance.toBlob === 'function') {
+            const blob = await instance.toBlob();
+            pdfBuffer = Buffer.from(await blob.arrayBuffer());
+          } else {
+            throw new Error('No suitable method found to generate PDF buffer');
+          }
+          
+        } catch (instanceError) {
+          console.error('PDF Generate API: Instance approach failed:', instanceError);
+          throw new Error(`All PDF generation approaches failed. Last error: ${instanceError instanceof Error ? instanceError.message : 'Unknown error'}`);
+        }
+      }
     }
 
     if (!pdfBuffer) {
@@ -333,6 +339,9 @@ export async function POST(request: NextRequest) {
     // Ensure we have a proper Buffer
     if (!Buffer.isBuffer(pdfBuffer)) {
       console.log('PDF Generate API: Converting to Buffer...');
+      console.log('PDF Generate API: pdfBuffer type:', typeof pdfBuffer);
+      console.log('PDF Generate API: pdfBuffer constructor:', pdfBuffer?.constructor?.name);
+      
       try {
         if (pdfBuffer instanceof ArrayBuffer) {
           pdfBuffer = Buffer.from(pdfBuffer);
@@ -341,6 +350,9 @@ export async function POST(request: NextRequest) {
         } else if (pdfBuffer && typeof pdfBuffer === 'object' && pdfBuffer.data) {
           // Some versions might wrap buffer in an object
           pdfBuffer = Buffer.from(pdfBuffer.data);
+        } else if (pdfBuffer && typeof pdfBuffer === 'object' && Array.isArray(pdfBuffer)) {
+          // If it's an array of bytes
+          pdfBuffer = Buffer.from(pdfBuffer);
         } else {
           throw new Error(`Unsupported buffer type: ${typeof pdfBuffer}, constructor: ${pdfBuffer?.constructor?.name}`);
         }
