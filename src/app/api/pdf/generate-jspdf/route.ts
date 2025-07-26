@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, STORAGE_PATHS } from '@/lib/firebase';
-import { ResumeContent } from '@/types';
+import { ResumeContent, Education, Experience, Project, Certification } from '@/types';
 import jsPDF from 'jspdf';
 
 export async function POST(request: NextRequest) {
@@ -249,7 +249,7 @@ export async function POST(request: NextRequest) {
         // EDUCATION - ALWAYS INCLUDE
         if (content.education?.length > 0) {
           addSection('EDUCATION');
-          content.education.slice(0, 1).forEach(edu => {
+          content.education.slice(0, 1).forEach((edu: Education) => {
             addText(edu.institution.toUpperCase(), 8, 'bold');
             addText(edu.degree, 7);
             if (edu.year) {
@@ -289,7 +289,7 @@ export async function POST(request: NextRequest) {
           // Programming
           addText('PROGRAMMING', 7, 'bold');
           if (content.skills?.technical) {
-            const progLanguages = content.skills.technical.filter(skill => 
+            const progLanguages = content.skills.technical.filter((skill: string) => 
               ['Java', 'Python', 'JavaScript', 'C++', 'C', 'TypeScript', 'HTML', 'CSS'].some(lang => 
                 skill.toLowerCase().includes(lang.toLowerCase())
               )
@@ -323,25 +323,15 @@ export async function POST(request: NextRequest) {
           addSection('PROJECTS');
           console.log('PDF: Processing projects:', content.projects.length);
           
-          content.projects.slice(0, 2).forEach((project, index) => {
+          content.projects.slice(0, 2).forEach((project: Project, index: number) => {
             console.log(`PDF: Project ${index + 1}:`, project.name, project.description);
             console.log(`PDF: Y position before project ${index + 1}: ${yPosition}`);
             
-            // Use a default duration if not provided
-            const projectDuration = project.duration || 
-              (index === 0 ? 'Mar 2024 - Apr 2024' : 'Jan 2024 - Feb 2024');
+            // Projects don't have duration, so we'll use a simple default year
+            const projectYear = index === 0 ? '2024' : '2023';
             
             // Ensure we have description and achievements
             let projectDescription = project.description || 'Developed and implemented project solution with modern technologies';
-            
-            // Convert description to string if it's not already
-            if (typeof projectDescription !== 'string') {
-              if (Array.isArray(projectDescription)) {
-                projectDescription = projectDescription.join(' ');
-              } else {
-                projectDescription = String(projectDescription);
-              }
-            }
             
             const projectAchievements = project.achievements && project.achievements.length > 0 ? 
               project.achievements : ['Successfully completed project objectives'];
@@ -349,7 +339,7 @@ export async function POST(request: NextRequest) {
             addProjectEntry(
               project.name,
               '', // Remove type from header
-              projectDuration,
+              projectYear,
               projectDescription,
               projectAchievements
             );
@@ -373,7 +363,7 @@ export async function POST(request: NextRequest) {
         // EXPERIENCE - ALWAYS INCLUDE (After projects to ensure projects show first)
         if (content.experience?.length > 0) {
           addSection('EXPERIENCE');
-          content.experience.slice(0, 2).forEach(exp => {
+          content.experience.slice(0, 2).forEach((exp: Experience) => {
             addJobEntry(exp.title, exp.company, exp.duration, exp.description || []);
           });
         }
@@ -381,7 +371,7 @@ export async function POST(request: NextRequest) {
         // CERTIFICATIONS - ALWAYS INCLUDE (Keep minimal to save space)
         if (content.certifications?.length > 0) {
           addSection('CERTIFICATIONS');
-          content.certifications.slice(0, 2).forEach(cert => {
+          content.certifications.slice(0, 2).forEach((cert: Certification) => {
             const certName = cert?.name && typeof cert.name === 'string' ? cert.name : 'Certification';
             const certIssuer = cert?.issuer && typeof cert.issuer === 'string' ? cert.issuer : 'Issuer';
             addText(`${certName} | ${certIssuer}`, 7, 'bold');

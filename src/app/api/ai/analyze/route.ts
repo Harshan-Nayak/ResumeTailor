@@ -92,7 +92,7 @@ export async function POST(request: NextRequest) {
       summary: `${masterResumeContent.summary} Experienced in full-stack development with React and Node.js.`,
       skills: {
         ...masterResumeContent.skills,
-        technical: ['JavaScript', 'React', 'Node.js', 'TypeScript', ...masterResumeContent.skills.technical.filter(skill => !['JavaScript', 'React', 'Node.js', 'TypeScript'].includes(skill))]
+        technical: ['JavaScript', 'React', 'Node.js', 'TypeScript', ...masterResumeContent.skills.technical.filter((skill: string) => !['JavaScript', 'React', 'Node.js', 'TypeScript'].includes(skill))]
       }
     };
 

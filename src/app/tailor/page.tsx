@@ -210,12 +210,9 @@ export default function TailorPage() {
     setState(prev => ({ ...prev, isGeneratingPdf: true }));
 
     try {
-      console.log('Starting PDF generation...');
-
-      // First try: Simple @react-pdf/renderer approach
-      console.log('Trying approach 1: @react-pdf/renderer...');
+      console.log('Starting PDF generation with @react-pdf/renderer...');
       
-      let response = await fetch('/api/pdf/generate', {
+      const response = await fetch('/api/pdf/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -225,37 +222,18 @@ export default function TailorPage() {
           userId: user.uid,
           jobTitle: state.jobTitle,
           company: state.company,
+          jobDescription: state.jobDescription,
         }),
       });
 
-      let result = await response.json();
-
-      // If first approach fails, try jsPDF fallback
-      if (!result.success) {
-        console.log('Approach 1 failed, trying approach 2: jsPDF...');
-        
-        response = await fetch('/api/pdf/generate-jspdf', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            content: state.comparison.tailored,
-            userId: user.uid,
-            jobTitle: state.jobTitle,
-            company: state.company,
-          }),
-        });
-
-        result = await response.json();
-      }
+      const result = await response.json();
 
       if (!result.success) {
-        throw new Error(result.error || 'Both PDF generation methods failed');
+        throw new Error(result.error || 'PDF generation failed');
       }
 
       console.log('PDF generated successfully:', result.data.downloadURL);
-      console.log('Generated using:', result.data.generator || '@react-pdf/renderer');
+      console.log('Generated using @react-pdf/renderer');
 
       // Open PDF in new tab for immediate viewing
       window.open(result.data.downloadURL, '_blank');
@@ -298,14 +276,12 @@ export default function TailorPage() {
         toast.error('PDF viewing successful, but download failed. You can right-click on the PDF tab to save it manually.');
       }
       
-      const generatorInfo = result.data.generator ? ` (${result.data.generator})` : '';
-      toast.success(`PDF generated successfully${generatorInfo}! Opening in new tab and downloading...`);
+      toast.success('PDF generated successfully! Opening in new tab and downloading...');
 
     } catch (error: any) {
       console.error('PDF generation error:', error);
       
-      // If both approaches fail, show detailed error
-      const errorMessage = error.message || 'Failed to generate PDF with both methods';
+      const errorMessage = error.message || 'Failed to generate PDF';
       toast.error(`PDF Generation Failed: ${errorMessage}`);
       
       // Offer alternative download method

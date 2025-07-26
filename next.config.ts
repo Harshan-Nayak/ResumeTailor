@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ['@react-pdf/renderer'],
   webpack: (config, { isServer }) => {
     if (!isServer) {
       // Don't resolve these modules on client side
@@ -15,6 +16,14 @@ const nextConfig: NextConfig = {
         os: false,
       };
     }
+    
+    // Configure for React PDF
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      canvas: false,
+      encoding: false,
+    };
+    
     return config;
   },
 };

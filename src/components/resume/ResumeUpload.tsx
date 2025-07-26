@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { validatePdfFile, formatFileSize } from '@/lib/pdf-utils';
-import { UploadState } from '@/types';
 import { toast } from 'sonner';
 import {
   Upload,
@@ -25,13 +24,21 @@ interface UploadProgress {
   message: string;
 }
 
+interface ResumeUploadState {
+  isUploading: boolean;
+  isParsing: boolean;
+  isComplete: boolean;
+  error?: string;
+  resumeId?: string;
+}
+
 export const ResumeUpload: React.FC = () => {
-  const [uploadState, setUploadState] = useState<UploadState>({
+  const [uploadState, setUploadState] = useState<ResumeUploadState>({
     isUploading: false,
     isParsing: false,
     isComplete: false,
-    error: null,
-    resumeId: null
+    error: undefined,
+    resumeId: undefined
   });
   
   const [uploadProgress, setUploadProgress] = useState<UploadProgress>({
@@ -65,8 +72,8 @@ export const ResumeUpload: React.FC = () => {
       isUploading: true,
       isParsing: false,
       isComplete: false,
-      error: null,
-      resumeId: null
+      error: undefined,
+      resumeId: undefined
     });
 
     setUploadedFile(file);
@@ -132,7 +139,7 @@ export const ResumeUpload: React.FC = () => {
         isUploading: false,
         isParsing: false,
         isComplete: true,
-        error: null,
+        error: undefined,
         resumeId: uploadResult.data.resumeId
       });
 
@@ -154,7 +161,7 @@ export const ResumeUpload: React.FC = () => {
         isParsing: false,
         isComplete: false,
         error: error.message || 'An unexpected error occurred',
-        resumeId: null
+        resumeId: undefined
       });
 
       toast.error(error.message || 'Failed to process resume');
@@ -172,8 +179,8 @@ export const ResumeUpload: React.FC = () => {
       isUploading: false,
       isParsing: false,
       isComplete: false,
-      error: null,
-      resumeId: null
+      error: undefined,
+      resumeId: undefined
     });
     setUploadedFile(null);
     setUploadProgress({
@@ -194,7 +201,7 @@ export const ResumeUpload: React.FC = () => {
   });
 
   const isProcessing = uploadState.isUploading || uploadState.isParsing;
-  const hasError = uploadState.error !== null;
+  const hasError = !!uploadState.error;
 
   return (
     <div className="max-w-2xl mx-auto p-6">

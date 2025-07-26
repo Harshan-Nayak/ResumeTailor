@@ -30,7 +30,7 @@ export function extractResumeDataFromText(rawText: string): Partial<ResumeConten
       linkedin: '',
       website: ''
     },
-    summary: '',
+    professionalSummary: '',
     skills: {
       technical: [],
       soft: [],
@@ -156,7 +156,7 @@ function processSectionContent(resumeData: Partial<ResumeContent>, section: stri
   
   switch (section) {
     case 'summary':
-      resumeData.summary = text;
+      resumeData.professionalSummary = text;
       break;
       
     case 'experience':

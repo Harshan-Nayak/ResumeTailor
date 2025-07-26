@@ -24,6 +24,8 @@ export interface Skills {
   soft: string[];
   tools: string[];
   languages?: string[];
+  frameworks?: string[];
+  databases?: string[];
 }
 
 // Work experience structure
