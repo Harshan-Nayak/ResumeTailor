@@ -212,7 +212,7 @@ export default function TailorPageClient() {
     try {
       console.log('Starting PDF generation with @react-pdf/renderer...');
       
-      const response = await fetch('/api/pdf/generate', {
+      const response = await fetch('/api/pdf/generate-jspdf', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

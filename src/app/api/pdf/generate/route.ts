@@ -3,10 +3,11 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { storage, STORAGE_PATHS } from '@/lib/firebase';
 import { ResumeContent } from '@/types';
 import { generateResumeHTML, generateTestResumeHTML } from '@/lib/pdf-utils';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 export async function POST(req: NextRequest) {
-  let browser;
+  let browser: any;
   let page;
   
   try {
@@ -80,13 +81,9 @@ export async function POST(req: NextRequest) {
 
     // Launch Puppeteer with minimal, stable settings
     browser = await puppeteer.launch({
+      args: chromium.args,
+      executablePath: await chromium.executablePath(),
       headless: true,
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu'
-      ]
     });
 
     console.log('PDF Generate API: Browser launched, creating page...');
